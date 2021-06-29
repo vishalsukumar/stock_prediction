@@ -27,7 +27,7 @@ class Stockdata(Dataset):
     def __getitem__(self, idx):
         start_idx = idx
         end_idx = idx + self.seq_len
-        return torch.tensor(self.df.iloc[start_idx:end_idx,1:6].to_numpy()),torch.tensor(self.df.iloc[start_idx:end_idx,8:].to_numpy())
+        return torch.from_numpy(self.df.iloc[start_idx:end_idx,1:6].to_numpy()).float(),torch.from_numpy(self.df.iloc[start_idx:end_idx,8:].to_numpy()).float()
 
 class LSTM(nn.Module):
     def __init__(self,input_size,seq_len,hidden_size,num_layers,num_classes):
@@ -37,13 +37,14 @@ class LSTM(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.num_classes = num_classes
-        self.lstm = nn.LSTM(5,256,1,batch_first=True)
-        self.fc = nn.Linear(self.hidden_size*self.seq_len,self.num_classes)
+        self.lstm = nn.RNN(5,256,1,batch_first=True)
+        self.fc = nn.Linear(self.hidden_size,self.num_classes)
     
     def forward(self,x):
-        h0 = torch.zeros((self.hidden_size,x.size(0),self.hidden_size),dtype=torch.float64)
-        c0 = torch.zeros((self.hidden_size,x.size(0),self.hidden_size),dtype=torch.float64)
-        out,(_,_) = self.lstm(x,)
+        h0 = torch.zeros((1,x.size(0),self.hidden_size))
+        c0 = torch.zeros((1,x.size(0),self.hidden_size))
+        out,_ = self.lstm(x,h0)
+        out = out[:,-1,:]
         out1 = self.fc(out)
         return out1
 
