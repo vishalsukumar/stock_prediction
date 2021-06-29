@@ -50,9 +50,12 @@ class LSTM(nn.Module):
 
 dataset = Stockdata(filename,30) 
 train_loader = DataLoader(dataset,8,True)
+loss_fn = nn.CrossEntropyLoss()
 for samplex,sampley in train_loader:
     lstm = LSTM(5,30,256,1,5)
     out = lstm(samplex)
+    loss = loss_fn(out,sampley)
+    print()
 
 print()
 # txt['diff'] = txt['Close']-txt['Open']
