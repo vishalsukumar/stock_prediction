@@ -54,7 +54,7 @@ for samplex,sampley in train_loader:
     lstm = LSTM(5,30,256,1,5)
     out = lstm(samplex)
 
-
+print()
 # txt['diff'] = txt['Close']-txt['Open']
 # txt_m3_to_below = txt[(txt['diff']<-3.0)]
 # txt_m3_to_m1 = txt[(txt['diff']>=-3.0) & (txt['diff']<-1.0)]
