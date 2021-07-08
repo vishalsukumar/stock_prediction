@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from torch.nn.modules import loss
 from torch.optim import Adam,LBFGS
 from sklearn.preprocessing import MinMaxScaler
+from tensorflow import keras
+from keras.models import Sequential
+from keras.layers import LSTM,Dense
 
 
 
@@ -81,7 +84,7 @@ df = pd.read_csv('AirPassengers.csv',usecols=[1])
 dataset = df.values
 scaler = MinMaxScaler(feature_range=(0,1))
 dataset = dataset.astype(float)
-scaler.fit_transform(dataset)
+dataset = scaler.fit_transform(dataset)
 data_x,data_y = to_seq(dataset,10)
 trainx,trainy = data_x[:110],data_y[:110]
 testx,testy = data_x[110:],data_y[110:]
@@ -90,9 +93,9 @@ criterion =nn.MSELoss()
 opti = Adam(model.parameters(),lr=0.01)
 optim = LBFGS(model.parameters(),lr=0.8)
 trainx,trainy = torch.from_numpy(trainx).float().transpose(0,1),torch.from_numpy(trainy).float()
-for epoch in range(10):
+for epoch in range(100):
     def closure():
-        optim.zero_grad()
+        opti.zero_grad()
         out = model(trainx)
         loss = criterion(out,trainy)
         loss.backward()
@@ -107,8 +110,9 @@ for epoch in range(10):
     # opti.step()
 out = model(trainx)
 out= out.detach().numpy()
-# test= scaler.inverse_transform(out)
-plt.plot(out)
+test= scaler.inverse_transform(out)
+plt.plot(test)
+plt.plot(scaler.inverse_transform(trainy))
 plt.show()
 # for epoch in range(10):
 #     for i in range(len(trainx)):
