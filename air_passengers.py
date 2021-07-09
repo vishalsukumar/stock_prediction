@@ -42,42 +42,86 @@ class Lstm_Model(nn.Module):
         super(Lstm_Model,self).__init__()
         self.seq_len = seq_len
         self.input_size = input_size
-        # self.lstm = nn.LSTM(input_size,32,1,batch_first=True)
+        self.lstm = nn.LSTM(input_size,32,2)
         self.lstm_cell = nn.LSTMCell(1,32)
         self.lstm_cell_2 = nn.LSTMCell(32,32)
         self.fc = nn.Linear(32,1)
     
     def forward(self,x,future=False):
-        h0 = torch.randn((x.size(1),32))
-        c0 = torch.randn((x.size(1),32))
-        h1 = torch.randn((x.size(1),32))
-        c1 = torch.randn((x.size(1),32))
+        # h0 = torch.randn((x.size(1),32))
+        # c0 = torch.randn((x.size(1),32))
+        # h1 = torch.randn((x.size(1),32))
+        # c1 = torch.randn((x.size(1),32))
+        # outs = []
+        # for i in range(x.size(0)):
+        #     h0,c0 = self.lstm_cell(x[i],(h0,c0))
+        #     h1,c1 = self.lstm_cell_2(h0,(h0,c0))
+        #     out1 = self.fc(h1)
+        #     outs.append(out1)
+        # outs = torch.stack(outs,dim=0)
+        # x_pred = outs[:,-1:,:]
+        # preds = []
+        # if future is True:
+        #     for i in range(50):
+        #         for t in range(x_pred.size(0)):
+        #             h0,c0 = self.lstm_cell(x_pred,(h0,c0))
+        #             h1,c1 = self.lstm_cell_2(h0,(h1,c1))
+        #             x_pred = self.fc(h1)
+        #             preds.append(x_pred)
+        #     preds = torch.stack(preds,dim=0)
+        #     outs = torch.cat([outs[-1,:],preds[-1,:]],0)
+        # return outs[-1,:]
+
+        # outs = []
+        # h0 = torch.randn(2,x.size(1),32)
+        # c0 = torch.randn(2,x.size(1),32)
+        # for i in range(x.size(0)):
+        #     out,(h0,c0) = self.lstm(x[i:i+1,:],(h0,c0))
+        #     out1 = self.fc(out)
+        #     outs.append(out1)
+        # outs = torch.cat(outs,0)
+        # if future is True:
+        #     x_pred = outs[:,-1:,:]
+        #     preds = []
+        #     h0 = torch.randn(2,x_pred.size(1),32)
+        #     c0 = torch.randn(2,x_pred.size(1),32)
+        #     for i in range(500):
+        #         out,(h0,c0) = self.lstm(x_pred,(h0,c0))
+        #         x_pred = self.fc(out)
+        #         preds.append(x_pred)
+        #     preds = torch.cat(preds,1)
+        #     return torch.cat([outs[-1,:],preds[-1,:]],0)
+        h0 = torch.randn((2,x.size(1),32))
+        c0 = torch.randn((2,x.size(1),32))
         outs = []
-        for i in range(x.size(0)):
-            h0,c0 = self.lstm_cell(x[i],(h0,c0))
-            h1,c1 = self.lstm_cell_2(h0,(h0,c0))
-            out1 = self.fc(h1)
-            outs.append(out1)
-        outs = torch.stack(outs,dim=0)
-        h3,c3 = h0,c0
-        h4,c4 = h1,c1
-        x_pred = out1
+        out,(h0,c0) = self.lstm(x,(h0,c0))
+        outs = self.fc(out)
+
+
+        x_ = x[1:,-1:,:]
+        x_ = torch.cat([x_,outs[-1:,-1:,:]],0)
         preds = []
         if future is True:
-            for i in range(50):
-                h3,c3 = self.lstm_cell(x_pred,(h3,c3))
-                h4,c4 = self.lstm_cell_2(h3,(h3,c3))
-                x_pred = self.fc(h4)
-                preds.append(x_pred)
-            preds = torch.stack(preds,dim=0)
-            torch.cat([outs,preds],0)
+            h0 = torch.randn((2,x_.size(1),32))
+            c0 = torch.randn((2,x_.size(1),32))
+            for i in range(500):
+                out,(h0,c0) = self.lstm(x_[i:i+10,:],(h0,c0))
+                out1 = self.fc(out)
+                preds.append(out1)
+                x_ = torch.cat([x_,out1[-1:,-1:,:]],0)
+            preds = torch.cat(preds,1)
+            return torch.cat([outs[-1,:],preds[-1,:]],0)
+
+        return outs[-1,:]
+
+
+        return outs[-1,:]
         # for inp in x.split(1,dim=1):
         #     h0,c0 = self.lstm_cell(inp,(h0,c0))
         #     h1,c1 = self.lstm_cell_2(h0,(h0,c0))
         #     out1 = self.fc(h1)
         #     outs.append(out1)
         # outs = torch.cat(outs,dim=1)
-        return outs[-1,:]
 
 def to_seq(dataset,seq_len=1):
     x=[]
@@ -119,11 +163,12 @@ dataset = df.values
 scaler = MinMaxScaler(feature_range=(0,1))
 dataset = scaler.fit_transform(dataset)
 data_x,data_y = to_seq(dataset,10)
-trainx,trainy = torch.from_numpy(data_x).float().transpose(0,1),torch.from_numpy(data_y).float()
+trainx,trainy = torch.from_numpy(data_x[:7000,]).float().transpose(0,1),torch.from_numpy(data_y[:7000,]).float()
+testx,testy = torch.from_numpy(data_x[7001:,]).float().transpose(0,1),torch.from_numpy(data_y[7001:,]).float()
 model = Lstm_Model(1,10)
 criterion =nn.MSELoss()
 opti = Adam(model.parameters(),lr=0.01)
-for epoch in range(10):
+for epoch in range(100):
     def closure():
         opti.zero_grad()
         out = model(trainx)
@@ -132,11 +177,12 @@ for epoch in range(10):
         print(f'loss={loss.item()}')
         return loss
     opti.step(closure)
-out = model(trainx,future=True)
+out = model(testx,future=False)
 out= out.detach().numpy()
 test= scaler.inverse_transform(out)
-plt.plot(test)
+plt.plot(np.arange(0,test.shape[0])+7000,test[:,0])
 plt.plot(scaler.inverse_transform(trainy))
+plt.plot(np.arange(0,test.shape[0])+7000,scaler.inverse_transform(testy)[:,0])
 plt.show()
 # dataset = Stockdata(filename,10)
 # x,y = dataset[0]
