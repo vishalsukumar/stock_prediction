@@ -11,10 +11,8 @@ class Lstm_Model(nn.Module):
         self.lstm = nn.LSTM(input_size,hidden_size,num_layers)
         self.fc = nn.Linear(self.hidden_size,1)
     
-    def forward(self,x,future=False):
+    def forward(self,x):
         h0 = torch.randn((self.num_layers,x.size(1),self.hidden_size))
         c0 = torch.randn((self.num_layers,x.size(1),self.hidden_size))
-        # outs = []
         out,(h0,c0) = self.lstm(x,(h0,c0))
-        # outs = self.fc(out)
         return self.fc(out)[-1,:]
