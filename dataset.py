@@ -23,11 +23,10 @@ class Stockdata_set(Dataset):
             self.x.append(self.data_set[i:self.seq_len+i])
             self.y.append(self.data_set[i+self.seq_len])
         self.x,self.y = np.array(self.x),np.array(self.y)
-        print()
+
     def __len__(self):
         return self.x.shape[0]
+
     def __getitem__(self, idx):
         x_ = self.x[idx] 
         return torch.from_numpy(self.x[idx].astype(np.float32)),torch.from_numpy(self.y[idx].astype(np.float32))
-
-
