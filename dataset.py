@@ -28,5 +28,4 @@ class Stockdata_set(Dataset):
         return self.x.shape[0]
 
     def __getitem__(self, idx):
-        x_ = self.x[idx] 
         return torch.from_numpy(self.x[idx].astype(np.float32)),torch.from_numpy(self.y[idx].astype(np.float32))
