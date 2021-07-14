@@ -12,27 +12,28 @@ from model import Lstm_Model
 
 
 data_filename = 'D:/dev/stock_prediction/aapl.us.txt'
-data_set = Stockdata_set(data_filename,10)
+sequence_length = 10
+data_set = Stockdata_set(data_filename,sequence_length)
 train_set = Subset(data_set,range(0,int(len(data_set)*0.8)))
 test_set = Subset(data_set,range(int(len(data_set)*0.8),len(data_set)))
 train_loader = DataLoader(train_set,batch_size=256,shuffle=False)
 test_loader = DataLoader(test_set,batch_size=len(test_set),shuffle=False)
 
-model = Lstm_Model(1,32,2)
+model = Lstm_Model(input_size=1,hidden_size=32,num_layers=2)
 criterion =nn.MSELoss()
-opti = Adam(model.parameters(),lr=0.0002)
-scheduler = lr_scheduler.MultiStepLR(opti,[200],0.5)
+optimizer = Adam(model.parameters(),lr=0.0002)
+scheduler = lr_scheduler.MultiStepLR(optimizer,[200],0.5)
 
 
 for epoch in range(200):
     running_loss = 0
     for trainx,trainy in train_loader:
         trainx = trainx.transpose(0,1)
-        opti.zero_grad()
+        optimizer.zero_grad()
         out = model(trainx)
         loss = torch.abs(out-trainy).sum()
         loss.backward()
-        opti.step()
+        optimizer.step()
         running_loss+=loss.item()
     print(f'epoch = {epoch} loss= {running_loss}')
     scheduler.step()
@@ -50,4 +51,3 @@ with torch.no_grad():
     plt.plot(y,label='Ground truth')
     plt.legend()
     plt.show()
-
